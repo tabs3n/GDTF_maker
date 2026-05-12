@@ -12,15 +12,21 @@ import {
   shouldSnap
 } from "./gdtf-core.js";
 
+const PDFJS_VERSION = "4.10.38";
 const PDFJS_CDN_MODULES = [
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs",
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/pdf.mjs",
-  "https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs",
-  "https://unpkg.com/pdfjs-dist@4.10.38/legacy/build/pdf.mjs"
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.mjs`,
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.mjs`,
+  `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.mjs`,
+  `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.mjs`
+];
+const PDFJS_WORKER_URLS = [
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.mjs`,
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.worker.mjs`,
+  `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.mjs`
 ];
 
-const PDFJS_CMAP_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/cmaps/";
-const PDFJS_FONT_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/standard_fonts/";
+const PDFJS_CMAP_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/cmaps/`;
+const PDFJS_FONT_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/standard_fonts/`;
 
 const state = {
   rows: [],
@@ -146,6 +152,21 @@ async function extractTextFromFile(file) {
   throw new Error("Dateityp wird noch nicht unterstuetzt.");
 }
 
+async function buildWorkerBlobUrl() {
+  for (const url of PDFJS_WORKER_URLS) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) continue;
+      const text = await response.text();
+      const blob = new Blob([text], { type: "text/javascript" });
+      return URL.createObjectURL(blob);
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
 async function loadPdfJs() {
   if (!pdfjsPromise) {
     pdfjsPromise = (async () => {
@@ -154,7 +175,8 @@ async function loadPdfJs() {
         try {
           const pdfjs = await import(moduleUrl);
           if (pdfjs.GlobalWorkerOptions) {
-            pdfjs.GlobalWorkerOptions.workerSrc = "";
+            const blobSrc = await buildWorkerBlobUrl();
+            pdfjs.GlobalWorkerOptions.workerSrc = blobSrc ?? moduleUrl.replace("pdf.mjs", "pdf.worker.mjs");
           }
           return pdfjs;
         } catch (error) {
