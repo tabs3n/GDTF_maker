@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GDTF Forge</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Vercel-ready Generator</p>
+        <h1>GDTF Forge</h1>
+      </div>
+      <div class="header-actions">
+        <button class="button button-ghost" id="loadSample" type="button">
+          <i data-lucide="sparkles" aria-hidden="true"></i>
+          Beispiel
+        </button>
+        <button class="button button-primary" id="generateGdtfTop" type="button">
+          <i data-lucide="file-archive" aria-hidden="true"></i>
+          GDTF erstellen
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel upload-panel" aria-labelledby="upload-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Input</p>
+            <h2 id="upload-title">Uploads</h2>
+          </div>
+          <span class="status-pill" id="parseStatus">Bereit</span>
+        </div>
+
+        <label class="dropzone" for="fileInput">
+          <input id="fileInput" type="file" multiple accept=".pdf,.txt,.csv,.tsv,.md,text/*,application/pdf">
+          <span class="dropzone-icon"><i data-lucide="upload-cloud" aria-hidden="true"></i></span>
+          <span class="dropzone-title">Datasheets und DMX-Sheets</span>
+          <span class="dropzone-meta">PDF, TXT, CSV oder TSV</span>
+        </label>
+
+        <div class="field-stack">
+          <label for="rawText">Textauszug</label>
+          <textarea id="rawText" spellcheck="false" placeholder="DMX chart hier einfuegen oder Upload verarbeiten lassen"></textarea>
+        </div>
+
+        <div class="button-row">
+          <button class="button button-secondary" id="parseText" type="button">
+            <i data-lucide="scan-text" aria-hidden="true"></i>
+            Text erkennen
+          </button>
+          <button class="button button-ghost" id="clearInput" type="button">
+            <i data-lucide="eraser" aria-hidden="true"></i>
+            Leeren
+          </button>
+        </div>
+
+        <div class="notice-list" id="warnings" aria-live="polite"></div>
+      </section>
+
+      <section class="panel meta-panel" aria-labelledby="meta-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Fixture</p>
+            <h2 id="meta-title">Metadaten</h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Hersteller
+            <input id="manufacturer" autocomplete="organization" value="Generic">
+          </label>
+          <label>
+            Geraetename
+            <input id="fixtureName" value="LED Fixture">
+          </label>
+          <label>
+            Kurzname
+            <input id="shortName" value="LED">
+          </label>
+          <label>
+            DMX-Modus
+            <input id="modeName" value="Default">
+          </label>
+          <label>
+            Lampentyp
+            <select id="lampType">
+              <option>LED</option>
+              <option>Discharge</option>
+              <option>Tungsten</option>
+              <option>Halogen</option>
+            </select>
+          </label>
+          <label>
+            Beam-Typ
+            <select id="beamType">
+              <option>Wash</option>
+              <option>Spot</option>
+              <option>Rectangle</option>
+              <option>Fresnel</option>
+              <option>PC</option>
+              <option>Glow</option>
+              <option>None</option>
+            </select>
+          </label>
+          <label>
+            Leistung W
+            <input id="powerConsumption" type="number" min="0" step="1" value="100">
+          </label>
+          <label>
+            Lumen
+            <input id="luminousFlux" type="number" min="0" step="1" value="3000">
+          </label>
+          <label>
+            Beam angle
+            <input id="beamAngle" type="number" min="0" step="0.1" value="25">
+          </label>
+          <label>
+            Field angle
+            <input id="fieldAngle" type="number" min="0" step="0.1" value="25">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="dmx-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Output Mapping</p>
+            <h2 id="dmx-title">DMX-Kanaele</h2>
+          </div>
+          <button class="icon-button" id="addRow" type="button" title="Kanal hinzufuegen" aria-label="Kanal hinzufuegen">
+            <i data-lucide="plus" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-channel">CH</th>
+                <th>Bezeichnung</th>
+                <th>GDTF-Attribut</th>
+                <th>Phys. von</th>
+                <th>Phys. bis</th>
+                <th>Sets</th>
+                <th>Bit</th>
+                <th class="col-action"></th>
+              </tr>
+            </thead>
+            <tbody id="rowsBody">
+              <tr class="empty-row">
+                <td colspan="8">Noch keine Kanaele erkannt.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="result-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Export</p>
+            <h2 id="result-title">GDTF-Paket</h2>
+          </div>
+          <span class="status-pill" id="exportStatus">Noch nicht erstellt</span>
+        </div>
+
+        <div class="export-actions">
+          <button class="button button-primary" id="generateGdtf" type="button">
+            <i data-lucide="file-archive" aria-hidden="true"></i>
+            GDTF erstellen
+          </button>
+          <a class="button button-secondary disabled" id="downloadGdtf" download>
+            <i data-lucide="download" aria-hidden="true"></i>
+            Download
+          </a>
+          <a class="button button-ghost disabled" id="downloadXml" download="description.xml">
+            <i data-lucide="code-xml" aria-hidden="true"></i>
+            XML
+          </a>
+        </div>
+
+        <pre id="xmlPreview" class="xml-preview" aria-label="XML Vorschau"></pre>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
