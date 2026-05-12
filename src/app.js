@@ -19,7 +19,6 @@ const PDFJS_CDN_MODULES = [
   "https://unpkg.com/pdfjs-dist@4.10.38/legacy/build/pdf.mjs"
 ];
 
-const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs";
 const PDFJS_CMAP_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/cmaps/";
 const PDFJS_FONT_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/standard_fonts/";
 
@@ -155,7 +154,7 @@ async function loadPdfJs() {
         try {
           const pdfjs = await import(moduleUrl);
           if (pdfjs.GlobalWorkerOptions) {
-            pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+            pdfjs.GlobalWorkerOptions.workerSrc = "";
           }
           return pdfjs;
         } catch (error) {
@@ -175,7 +174,6 @@ async function extractPdfText(file) {
     const pdfjs = await loadPdfJs();
     const task = pdfjs.getDocument({
       data: new Uint8Array(buffer.slice(0)),
-      disableWorker: true,
       isEvalSupported: false,
       useSystemFonts: true,
       cMapUrl: PDFJS_CMAP_URL,
